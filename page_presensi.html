@@ -1,0 +1,165 @@
+<div id="sectionPresensi" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 max-w-2xl mx-auto">
+  <h2 class="text-xl font-bold text-slate-800 mb-2">📸 Presensi Kehadiran Guru</h2>
+  <p class="text-slate-500 text-sm mb-6">Ambil foto wajah Anda langsung untuk absensi kehadiran.</p>
+
+  <div class="space-y-6">
+    
+    <!-- 1. PRATINJAU FOTO -->
+    <div class="flex flex-col items-center gap-3">
+      <div class="relative w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 aspect-video flex items-center justify-center shadow-inner">
+        
+        <!-- Placeholder Sebelum Foto Diambil -->
+        <div id="placeholderKamera" class="text-slate-400 text-sm flex flex-col items-center gap-2 text-center p-4">
+          <i class="fa-solid fa-camera text-4xl text-slate-500 mb-1"></i>
+          <span>Belum Ada Foto Wajah</span>
+        </div>
+
+        <!-- Pratinjau Foto Hasil Ambil Kamera -->
+        <img id="imgPreview" class="hidden absolute inset-0 w-full h-full object-cover" />
+      </div>
+
+      <!-- Input Kamera Native (Satu-satunya metode aman dari blokir iFrame) -->
+      <input type="file" id="inputKameraNative" accept="image/*" capture="user" class="hidden" onchange="prosesFotoMasuk(event)">
+
+      <!-- Tombol Aksi Kamera -->
+      <div class="flex gap-2 w-full max-w-md">
+        <button type="button" id="btnBukaKamera" onclick="pemicuKamera()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm transition flex items-center justify-center gap-2 shadow-sm">
+          📷 Buka Kamera / Foto Wajah
+        </button>
+
+        <button type="button" id="btnUlangFoto" onclick="ulangFoto()" class="hidden py-3 px-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl text-sm transition flex items-center justify-center gap-2">
+          🔄 Foto Ulang
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. STATUS LOKASI GPS -->
+    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-150 text-sm text-slate-600 flex items-center gap-3">
+      <i class="fa-solid fa-location-dot text-rose-500 text-lg"></i>
+      <div>
+        <p class="font-semibold text-slate-800">Koordinat Lokasi Anda:</p>
+        <p id="txtKoordinat" class="text-xs text-slate-500 mt-0.5">Sedang mencari lokasi GPS...</p>
+      </div>
+    </div>
+
+    <!-- 3. TOMBOL KIRIM PRESENSI -->
+    <button id="btnKirimAbsen" onclick="kirimDataAbsen()" disabled 
+            class="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-semibold py-3 px-4 rounded-2xl shadow-lg disabled:shadow-none transition duration-200">
+      Kirim Presensi Sekarang
+    </button>
+    
+  </div>
+</div>
+
+<script>
+  var fotoBase64 = "";
+  var koordinatGPS = "";
+
+  // Jalankan saat dokumen dimuat
+  document.addEventListener("DOMContentLoaded", function() {
+    ambilLokasiGPS();
+  });
+
+  // FUNGSI 1: TRIGGER BUKA KAMERA
+  function pemicuKamera() {
+    var inputEl = document.getElementById('inputKameraNative');
+    if (inputEl) {
+      inputEl.click();
+    }
+  }
+
+  // FUNGSI 2: PROSES FOTO YANG DIPILIH / DIJEPRET
+  function prosesFotoMasuk(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var dataUrl = e.target.result;
+      fotoBase64 = dataUrl.split(',')[1];
+
+      // Tampilkan Preview
+      var imgPreview = document.getElementById('imgPreview');
+      var placeholder = document.getElementById('placeholderKamera');
+      var btnBuka = document.getElementById('btnBukaKamera');
+      var btnUlang = document.getElementById('btnUlangFoto');
+
+      if (imgPreview) {
+        imgPreview.src = dataUrl;
+        imgPreview.classList.remove('hidden');
+      }
+      if (placeholder) placeholder.classList.add('hidden');
+      if (btnBuka) btnBuka.innerText = "📷 Ganti Foto Wajah";
+      if (btnUlang) btnUlang.classList.remove('hidden');
+
+      cekKesiapanAbsen();
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  // FUNGSI 3: FOTO ULANG
+  function ulangFoto() {
+    fotoBase64 = "";
+    document.getElementById('inputKameraNative').value = "";
+    
+    document.getElementById('imgPreview').classList.add('hidden');
+    document.getElementById('placeholderKamera').classList.remove('hidden');
+    document.getElementById('btnBukaKamera').innerText = "📷 Buka Kamera / Foto Wajah";
+    document.getElementById('btnUlangFoto').classList.add('hidden');
+    
+    document.getElementById('btnKirimAbsen').disabled = true;
+  }
+
+  // FUNGSI 4: AMBIL GPS
+  function ambilLokasiGPS() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(position) {
+        koordinatGPS = position.coords.latitude + ", " + position.coords.longitude;
+        document.getElementById('txtKoordinat').innerText = koordinatGPS;
+        cekKesiapanAbsen();
+      }, function(error) {
+        document.getElementById('txtKoordinat').innerText = "Gagal memuat GPS. Aktifkan izin lokasi browser.";
+      });
+    } else {
+      document.getElementById('txtKoordinat').innerText = "Browser tidak mendukung GPS.";
+    }
+  }
+
+  // FUNGSI 5: CEK KESIAPAN TOMBOL KIRIM
+  function cekKesiapanAbsen() {
+    if (fotoBase64 !== "" && koordinatGPS !== "") {
+      document.getElementById('btnKirimAbsen').disabled = false;
+    }
+  }
+
+  // FUNGSI 6: KIRIM DATA PRESENSI
+  function kirimDataAbsen() {
+    var btnKirim = document.getElementById('btnKirimAbsen');
+    btnKirim.disabled = true;
+    btnKirim.innerText = 'Sedang Menyimpan...';
+
+    var emailUser = "-";
+    var sessionData = localStorage.getItem('userSession');
+    if (sessionData) {
+      try {
+        var user = JSON.parse(sessionData);
+        emailUser = user.email || "-";
+      } catch(e) {}
+    }
+
+    google.script.run
+      .withSuccessHandler(function(response) {
+        btnKirim.disabled = false;
+        btnKirim.innerText = 'Kirim Presensi Sekarang';
+
+        if (response && response.status === 'success') {
+          alert('🎉 ' + response.message);
+          ulangFoto();
+        } else {
+          alert('❌ ' + (response ? response.message : 'Gagal mengirim data.'));
+        }
+      })
+      .catatPresensi(fotoBase64, koordinatGPS, emailUser);
+  }
+</script>

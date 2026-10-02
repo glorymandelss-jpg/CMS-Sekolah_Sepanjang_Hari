@@ -1,0 +1,74 @@
+<div id="sectionUsers" class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 max-w-xl mx-auto">
+  <h2 class="text-xl font-bold text-slate-800 mb-2">👤 Tambah User Pengguna Baru</h2>
+  <p class="text-slate-500 text-sm mb-6">Isi formulir di bawah ini untuk mengandandakan akun guru/staf baru.</p>
+
+  <form id="formTambahUser" onsubmit="prosesTambahUser(event)" class="space-y-4">
+    
+    <!-- INPUT NAMA -->
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Lengkap</label>
+      <input type="text" id="namaUser" required placeholder="Contoh: Budi Santoso, S.Pd." 
+             class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500">
+    </div>
+
+    <!-- INPUT EMAIL -->
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">Alamat Email</label>
+      <input type="email" id="emailUser" required placeholder="guru@sekolah.sch.id" 
+             class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500">
+    </div>
+
+    <!-- INPUT ROLE / JABATAN -->
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">Role / Jabatan</label>
+      <select id="roleUser" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500">
+        <option value="GURU_PENDAMPING">Guru Pendamping</option>
+        <option value="GURU_MATAPELAJARAN">Guru Mata Pelajaran</option>
+        <option value="ADMIN">Administrator</option>
+      </select>
+    </div>
+
+    <!-- INPUT PASSWORD -->
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">Password Default</label>
+      <input type="password" id="passUser" required placeholder="••••••••" 
+             class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-indigo-500">
+    </div>
+
+    <!-- TOMBOL SIMPAN -->
+    <button type="submit" id="btnSimpanUser" 
+            class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl text-sm transition duration-200 shadow-md">
+      Simpan User Baru
+    </button>
+  </form>
+</div>
+
+<script>
+  function prosesTambahUser(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('btnSimpanUser');
+    btn.disabled = true;
+    btn.innerText = 'Menyimpan...';
+
+    const nama = document.getElementById('namaUser').value;
+    const email = document.getElementById('emailUser').value;
+    const role = document.getElementById('roleUser').value;
+    const password = document.getElementById('passUser').value;
+
+    // Memanggil fungsi yang ada di kode.gs
+    google.script.run
+      .withSuccessHandler(function(response) {
+        btn.disabled = false;
+        btn.innerText = 'Simpan User Baru';
+
+        if (response.status === 'success') {
+          alert('🎉 ' + response.message);
+          document.getElementById('formTambahUser').reset(); // Reset isi form
+        } else {
+          alert('❌ ' + response.message);
+        }
+      })
+      .tambahUserBaru(email, nama, role, password);
+  }
+</script>
